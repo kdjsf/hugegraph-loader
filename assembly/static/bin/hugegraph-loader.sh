@@ -10,6 +10,42 @@ abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
+# filter jvm param
+ext_j_param(){
+	jpoint=()
+	jparam=()
+	jnum=0
+	jopts=""
+	for arg in "$@"
+	    do
+	        if [[ $jpoint[$jnum] == -j* ]] && [ ${#jparam[@]} -lt $jnum ]
+	        then        
+	            jparam[$[$jnum - 1]]=$arg	             
+	        fi
+	        
+	        if [[ $arg == -j* ]]
+	        then
+	            jpoint[$jnum]=$arg
+	            let jnum+=1
+	        fi
+	    done
+	
+	#echo ${jpoint[@]}  "jpoints"
+	#echo ${jparam[@]}  "jparams"
+	
+	if [ ${#jpoint[@]} -le 0 ]
+	then
+	    export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
+	else
+	   for(( i=0;i<${#jpoint[@]};i++)) do
+		    export VARS=${VARS//${jpoint[$i]}/""}
+		    export VARS=${VARS//${jparam[$i]}/""}
+		    jopts="$jopts ${jparam[$i]}"
+	    done
+	    export JVM_OPTS="$JVM_OPTS $jopts -cp $LOADER_CLASSPATH"
+	fi
+}
+
 BIN=`abs_path`
 TOP="$(cd ${BIN}/../ && pwd)"
 CONF="$TOP/conf"
@@ -58,33 +94,11 @@ CP="$CP":$(find -L ${LIB} -name '*.jar' \
 
 export LOADER_CLASSPATH="${CLASSPATH:-}:$CP"
 
-# Xmx needs to be set so that it is big enough to cache all the vertexes in the run
-# export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
-jpoint="";
-jparam="";
-for arg in "$@"
-    do
-        if [[ $jpoint == "-j" ]] && [ ! -n "$jparam" ]
-        then        
-            jparam=$arg
-        fi
-        
-        if [ $arg == "-j" ]
-        then
-            jpoint=$arg 
-        fi
-    done
-
-if [ ! -n "$jparam" ]
-then
-    export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
-else
-    export VARS=${VARS//-j/""}
-    export VARS=${VARS//$jparam/""}
-    export JVM_OPTS="$JVM_OPTS $jparam -cp $LOADER_CLASSPATH"
-fi
-#echo ${VARS}
-#echo ${JVM_OPTS}
+# Xmx needs to be set so that it is big enough to cache all the vertexes in the run, default Xmx10g can custom use -j *** 
+ext_j_param $@
+  
+# echo ${VARS}
+# echo ${JVM_OPTS}
 
 # Uncomment to enable debugging
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
@@ -92,3 +106,7 @@ fi
 exec ${JAVA} -Dname="HugeGraphLoader" -Dloader.home.path=${TOP} -Dlog4j.configurationFile=${CONF}/log4j2.xml \
 -Djava.library.path=${NATIVE} \
 ${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}
+
+
+
+
