@@ -83,6 +83,7 @@ else
     export VARS=${VARS//$jparam/""}
     export JVM_OPTS="$JVM_OPTS $jparam -cp $LOADER_CLASSPATH"
 fi
+
 #echo ${VARS}
 #echo ${JVM_OPTS}
 
