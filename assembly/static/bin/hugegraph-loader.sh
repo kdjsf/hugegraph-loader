@@ -95,6 +95,7 @@ CP="$CP":$(find -L ${LIB} -name '*.jar' \
 export LOADER_CLASSPATH="${CLASSPATH:-}:$CP"
 
 # Xmx needs to be set so that it is big enough to cache all the vertexes in the run, default Xmx10g can custom use -j *** 
+# example: sh bin/hugegraph-loader.sh -g hugegraph -jx -Xmx2g -jm -Xms2m -f example/file/struct.json -s example/file/schema.groovy -jt -XX:+UseG1GC
 ext_j_param $@  
 # echo ${VARS}
 # echo ${JVM_OPTS}
@@ -105,7 +106,3 @@ ext_j_param $@
 exec ${JAVA} -Dname="HugeGraphLoader" -Dloader.home.path=${TOP} -Dlog4j.configurationFile=${CONF}/log4j2.xml \
 -Djava.library.path=${NATIVE} \
 ${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}
-
-
-
-
